@@ -15,7 +15,9 @@ import { Observable } from 'rxjs';
          (click)="onFlip()">
       <div class="card-inner">
         <div class="card-front">?</div>
-        <div class="card-back">{{ value }}</div>
+        <div class="card-back">
+          <img [src]="imageUrl" alt="Cat" />
+        </div>
       </div>
     </div>
   `,
@@ -61,9 +63,13 @@ import { Observable } from 'rxjs';
       color: white;
     }
     .card-back {
-      background-color: #FF9800;
-      color: white;
+      background-color: white;
       transform: rotateY(180deg);
+    }
+    .card-back img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     .card.matched .card-back {
       background-color: #4CAF50;
@@ -72,15 +78,12 @@ import { Observable } from 'rxjs';
       background-color: #1565C0;
     }
     .card.dark-mode .card-back {
-      background-color: #E65100;
-    }
-    .card.dark-mode.matched .card-back {
-      background-color: #2E7D32;
+      background-color: #333;
     }
   `]
 })
 export class CardComponent {
-  @Input() value: string = '';
+  @Input() imageUrl: string = '';
   @Input() flipped: boolean = false;
   @Input() matched: boolean = false;
   @Output() flip = new EventEmitter<void>();

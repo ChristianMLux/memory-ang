@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 
 interface Card {
   id: number;
-  value: string;
+  imageUrl: string;
   flipped: boolean;
   matched: boolean;
 }
@@ -24,7 +24,7 @@ interface Card {
       <div class="cards">
         <app-card 
           *ngFor="let card of cards" 
-          [value]="card.value" 
+          [imageUrl]="card.imageUrl" 
           [flipped]="card.flipped" 
           [matched]="card.matched"
           (flip)="flipCard(card)">
@@ -146,11 +146,11 @@ export class GameBoardComponent implements OnInit {
   }
 
   initializeGame() {
-    const values = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-    this.cards = [...values, ...values]
-      .map((value, index) => ({
+    const catIds = Array.from({ length: 8 }, () => Math.floor(Math.random() * 1000));
+    this.cards = [...catIds, ...catIds]
+      .map((id, index) => ({
         id: index,
-        value,
+        imageUrl: `https://cataas.com/cat?position=center&width=200&height=200&id=${id}`,
         flipped: false,
         matched: false
       }))
@@ -179,7 +179,7 @@ export class GameBoardComponent implements OnInit {
   checkForMatch() {
     setTimeout(() => {
       const [card1, card2] = this.flippedCards;
-      if (card1.value === card2.value) {
+      if (card1.imageUrl === card2.imageUrl) {
         card1.matched = card2.matched = true;
         this.flippedCards = [];
         if (this.cards.every(card => card.matched)) {
