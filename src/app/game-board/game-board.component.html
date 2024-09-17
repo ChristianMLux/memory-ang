@@ -1,0 +1,14 @@
+<div class="game-board">
+    <div class="cards">
+      <div *ngFor="let card of cards" class="card" [class.flipped]="card.flipped" [class.matched]="card.matched" (click)="flipCard(card)">
+        <div class="card-inner">
+          <div class="card-front">?</div>
+          <div class="card-back">{{ card.value }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="score">
+      Moves: {{ moves }}
+    </div>
+    <button (click)="initializeGame()">New Game</button>
+  </div>
