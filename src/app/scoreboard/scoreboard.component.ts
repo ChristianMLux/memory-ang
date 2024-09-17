@@ -1,8 +1,10 @@
 import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-scoreboard',
   standalone: true,
+  imports: [CommonModule],
   template: `
     <div class="scoreboard">
       <div>Moves: {{ moves }}</div>

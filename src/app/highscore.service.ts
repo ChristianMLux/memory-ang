@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, effect } from '@angular/core';
 
 export interface Highscore {
   name: string;
@@ -13,21 +13,36 @@ export class HighscoreService {
   private readonly STORAGE_KEY = 'memory-game-highscores';
   private readonly MAX_SCORES = 5;
 
-  getHighscores(): Highscore[] {
-    const scores = localStorage.getItem(this.STORAGE_KEY);
-    return scores ? JSON.parse(scores) : [];
+  private highscores = signal<Highscore[]>([]);
+
+  constructor() {
+    this.loadHighscores();
+    effect(() => {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.highscores()));
+    });
   }
 
-  addHighscore(name: string, moves: number): void {
+  private loadHighscores() {
+    const storedScores = localStorage.getItem(this.STORAGE_KEY);
+    if (storedScores) {
+      this.highscores.set(JSON.parse(storedScores));
+    }
+  }
+
+  getHighscores() {
+    return this.highscores;
+  }
+
+  addHighscore(name: string, moves: number) {
     const newScore: Highscore = { name, moves, date: new Date() };
-    const scores = this.getHighscores();
-    scores.push(newScore);
-    scores.sort((a, b) => a.moves - b.moves);
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(scores.slice(0, this.MAX_SCORES)));
+    this.highscores.update(scores => {
+      const newScores = [...scores, newScore].sort((a, b) => a.moves - b.moves);
+      return newScores.slice(0, this.MAX_SCORES);
+    });
   }
 
   isHighscore(moves: number): boolean {
-    const scores = this.getHighscores();
+    const scores = this.highscores();
     return scores.length < this.MAX_SCORES || moves < Math.max(...scores.map(s => s.moves));
   }
 }

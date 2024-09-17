@@ -1,11 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, computed, effect, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardComponent } from '../card/card.component';
 import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
 import { HighscoreService, Highscore } from '../highscore.service';
 import { ThemeService } from '../theme.service';
-import { Observable } from 'rxjs';
 
 interface Card {
   id: number;
@@ -18,159 +17,52 @@ interface Card {
   selector: 'app-game-board',
   standalone: true,
   imports: [CommonModule, FormsModule, CardComponent, ScoreboardComponent],
-  template: `
-    <div class="game-board" [class.dark-mode]="isDarkMode$ | async">
-      <app-scoreboard [moves]="moves"></app-scoreboard>
-      <div class="cards">
-        <app-card 
-          *ngFor="let card of cards" 
-          [imageUrl]="card.imageUrl" 
-          [flipped]="card.flipped" 
-          [matched]="card.matched"
-          (flip)="flipCard(card)">
-        </app-card>
-      </div>
-      <button (click)="initializeGame()">New Game</button>
-      
-      <div *ngIf="gameCompleted" class="game-completed">
-        <h2>Game Completed!</h2>
-        <p>You completed the game in {{ moves }} moves.</p>
-        <div *ngIf="isNewHighscore" class="new-highscore">
-          <p>New Highscore! Enter your name:</p>
-          <input [(ngModel)]="playerName" placeholder="Your name">
-          <button (click)="saveHighscore()">Save Score</button>
-        </div>
-      </div>
-
-      <div class="highscores">
-        <h3>Highscores</h3>
-        <ol>
-          <li *ngFor="let score of highscores">
-            {{ score.name }} - {{ score.moves }} moves ({{ score.date | date:'short' }})
-          </li>
-        </ol>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .game-board {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    .game-board.dark-mode {
-      background-color: #222;
-      color: #fff;
-    }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
-      width: 100%;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      font-size: 18px;
-      cursor: pointer;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .game-completed, .highscores {
-      width: 100%;
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #f0f0f0;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      transition: background-color 0.3s, color 0.3s;
-    }
-    .dark-mode .game-completed, .dark-mode .highscores {
-      background-color: #444;
-      color: #fff;
-    }
-    .new-highscore input {
-      width: calc(100% - 22px);
-      padding: 8px;
-      margin-bottom: 10px;
-    }
-    .new-highscore button {
-      width: 100%;
-      padding: 10px;
-      background-color: #008CBA;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .highscores ol {
-      padding-left: 20px;
-    }
-    .highscores li {
-      margin-bottom: 5px;
-    }
-  `]
+  templateUrl: './game-board.component.html',
+  styleUrls: ['./game-board.component.css']
 })
 export class GameBoardComponent implements OnInit {
-  cards: Card[] = [];
-  moves: number = 0;
-  gameCompleted: boolean = false;
-  isNewHighscore: boolean = false;
-  playerName: string = '';
-  highscores: Highscore[] = [];
-  isDarkMode$: Observable<boolean>;
-  flippedCards: Card[] = [];
-  isChecking: boolean = false;
+  private highscoreService = inject(HighscoreService);
+  public themeService = inject(ThemeService);
 
-  constructor(
-    private highscoreService: HighscoreService,
-    private themeService: ThemeService
-  ) {
-    this.isDarkMode$ = this.themeService.darkMode$;
-  }
+  cards = signal<Card[]>([]);
+  moves = signal(0);
+  gameCompleted = signal(false);
+  flippedCards = signal<Card[]>([]);
+  playerName = signal('');
+  highscores = this.highscoreService.getHighscores();
+
+  matchedPairs = computed(() => this.cards().filter(card => card.matched).length / 2);
+  isNewHighscore = computed(() => this.gameCompleted() && this.highscoreService.isHighscore(this.moves()));
 
   ngOnInit() {
     this.initializeGame();
-    this.loadHighscores();
   }
 
   initializeGame() {
     const catIds = Array.from({ length: 8 }, () => Math.floor(Math.random() * 1000));
-    this.cards = [...catIds, ...catIds]
+    this.cards.set([...catIds, ...catIds]
       .map((id, index) => ({
         id: index,
         imageUrl: `https://cataas.com/cat?position=center&width=200&height=200&id=${id}`,
         flipped: false,
         matched: false
       }))
-      .sort(() => Math.random() - 0.5);
-    this.moves = 0;
-    this.gameCompleted = false;
-    this.isNewHighscore = false;
-    this.playerName = '';
-    this.flippedCards = [];
-    this.isChecking = false;
+      .sort(() => Math.random() - 0.5));
+    this.moves.set(0);
+    this.gameCompleted.set(false);
+    this.flippedCards.set([]);
+    this.playerName.set('');
   }
 
   flipCard(card: Card) {
-    if (!card.flipped && !card.matched && !this.gameCompleted && !this.isChecking && this.flippedCards.length < 2) {
-      card.flipped = true;
-      this.flippedCards.push(card);
+    if (!card.flipped && !card.matched && !this.gameCompleted() && this.flippedCards().length < 2) {
+      this.cards.update(cards => 
+        cards.map(c => c.id === card.id ? {...c, flipped: true} : c)
+      );
+      this.flippedCards.update(flipped => [...flipped, card]);
       
-      if (this.flippedCards.length === 2) {
-        this.isChecking = true;
-        this.moves++;
+      if (this.flippedCards().length === 2) {
+        this.moves.update(m => m + 1);
         this.checkForMatch();
       }
     }
@@ -178,34 +70,29 @@ export class GameBoardComponent implements OnInit {
 
   checkForMatch() {
     setTimeout(() => {
-      const [card1, card2] = this.flippedCards;
+      const [card1, card2] = this.flippedCards();
       if (card1.imageUrl === card2.imageUrl) {
-        card1.matched = card2.matched = true;
-        this.flippedCards = [];
-        if (this.cards.every(card => card.matched)) {
-          this.gameCompleted = true;
-          this.checkHighscore();
-        }
+        this.cards.update(cards => 
+          cards.map(c => c.id === card1.id || c.id === card2.id ? {...c, matched: true} : c)
+        );
       } else {
-        card1.flipped = card2.flipped = false;
+        this.cards.update(cards => 
+          cards.map(c => c.id === card1.id || c.id === card2.id ? {...c, flipped: false} : c)
+        );
       }
-      this.flippedCards = [];
-      this.isChecking = false;
+      this.flippedCards.set([]);
     }, 1000);
-  }
-  checkHighscore() {
-    this.isNewHighscore = this.highscoreService.isHighscore(this.moves);
   }
 
   saveHighscore() {
-    if (this.playerName.trim()) {
-      this.highscoreService.addHighscore(this.playerName, this.moves);
-      this.loadHighscores();
-      this.isNewHighscore = false;
+    const name = this.playerName();
+    if (name.trim()) {
+      this.highscoreService.addHighscore(name, this.moves());
+      this.playerName.set('');
     }
   }
 
-  loadHighscores() {
-    this.highscores = this.highscoreService.getHighscores();
+  updatePlayerName(name: string) {
+    this.playerName.set(name);
   }
 }

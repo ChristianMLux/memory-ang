@@ -1,14 +1,43 @@
-<div class="game-board">
+<div class="game-board" [class.dark-mode]="themeService.darkMode()">
+    <app-scoreboard [moves]="moves()"></app-scoreboard>
     <div class="cards">
-      <div *ngFor="let card of cards" class="card" [class.flipped]="card.flipped" [class.matched]="card.matched" (click)="flipCard(card)">
-        <div class="card-inner">
-          <div class="card-front">?</div>
-          <div class="card-back">{{ card.value }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="score">
-      Moves: {{ moves }}
+      @for (card of cards(); track card.id) {
+        <app-card 
+          [imageUrl]="card.imageUrl" 
+          [flipped]="card.flipped" 
+          [matched]="card.matched"
+          (flip)="flipCard(card)">
+        </app-card>
+      }
     </div>
     <button (click)="initializeGame()">New Game</button>
+    
+    @if (gameCompleted()) {
+      <div class="game-completed">
+        <h2>Game Completed!</h2>
+        <p>You completed the game in {{ moves() }} moves.</p>
+        @if (isNewHighscore()) {
+          <div class="new-highscore">
+            <p>New Highscore! Enter your name:</p>
+            <input [ngModel]="playerName()" (ngModelChange)="updatePlayerName($event)" placeholder="Your name">
+            <button (click)="saveHighscore()">Save Score</button>
+          </div>
+        }
+      </div>
+    }
+  
+    <div class="highscores">
+      <h3>Highscores</h3>
+      @if (highscores().length) {
+        <ol>
+          @for (score of highscores(); track score.date) {
+            <li>
+              {{ score.name }} - {{ score.moves }} moves ({{ score.date | date:'short' }})
+            </li>
+          }
+        </ol>
+      } @else {
+        <p>No highscores yet!</p>
+      }
+    </div>
   </div>

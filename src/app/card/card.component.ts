@@ -1,7 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ThemeService } from '../theme.service';
-import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-card',
@@ -10,35 +8,24 @@ import { Observable } from 'rxjs';
   template: `
     <div class="card" 
          [class.flipped]="flipped" 
-         [class.matched]="matched" 
-         [class.dark-mode]="isDarkMode$ | async"
+         [class.matched]="matched"
          (click)="onFlip()">
       <div class="card-inner">
         <div class="card-front">?</div>
         <div class="card-back">
-          <img [src]="imageUrl" alt="Cat" />
+          <img [src]="imageUrl" alt="Card" />
         </div>
       </div>
     </div>
   `,
   styles: [`
     .card {
-      width: 100%;
-      height: 0;
-      padding-bottom: 100%;
+      width: 100px;
+      height: 100px;
       perspective: 1000px;
       cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.3s, background-color 0.3s, color 0.3s;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
-    }
-    .card:hover {
-      transform: scale(1.05);
-      box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
     }
     .card-inner {
-      position: absolute;
       width: 100%;
       height: 100%;
       transition: transform 0.6s;
@@ -55,8 +42,6 @@ import { Observable } from 'rxjs';
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      font-weight: bold;
     }
     .card-front {
       background-color: #2196F3;
@@ -71,28 +56,13 @@ import { Observable } from 'rxjs';
       height: 100%;
       object-fit: cover;
     }
-    .card.matched .card-back {
-      background-color: #4CAF50;
-    }
-    .card.dark-mode .card-front {
-      background-color: #1565C0;
-    }
-    .card.dark-mode .card-back {
-      background-color: #333;
-    }
   `]
 })
 export class CardComponent {
-  @Input() imageUrl: string = '';
-  @Input() flipped: boolean = false;
-  @Input() matched: boolean = false;
+  @Input() imageUrl!: string;
+  @Input() flipped!: boolean;
+  @Input() matched!: boolean;
   @Output() flip = new EventEmitter<void>();
-
-  isDarkMode$: Observable<boolean>;
-
-  constructor(private themeService: ThemeService) {
-    this.isDarkMode$ = this.themeService.darkMode$;
-  }
 
   onFlip() {
     if (!this.flipped && !this.matched) {
