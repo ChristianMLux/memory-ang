@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {AsyncPipe, DatePipe, NgForOf} from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardComponent } from '../card/card.component';
 import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
@@ -7,7 +7,7 @@ import { HighscoreService, Highscore } from '../highscore.service';
 import { ThemeService } from '../theme.service';
 import { Observable } from 'rxjs';
 
-interface Card {
+export interface Card {
   id: number;
   imageUrl: string;
   flipped: boolean;
@@ -17,21 +17,19 @@ interface Card {
 @Component({
   selector: 'app-game-board',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, ScoreboardComponent],
+  imports: [FormsModule, CardComponent, ScoreboardComponent, AsyncPipe, DatePipe, NgForOf],
   template: `
     <div class="game-board" [class.dark-mode]="isDarkMode$ | async">
       <app-scoreboard [moves]="moves"></app-scoreboard>
       <div class="cards">
-        <app-card 
-          *ngFor="let card of cards" 
-          [imageUrl]="card.imageUrl" 
-          [flipped]="card.flipped" 
-          [matched]="card.matched"
+        <app-card
+          *ngFor="let card of cards"
+          [card]="card"
           (flip)="flipCard(card)">
         </app-card>
       </div>
       <button (click)="initializeGame()">New Game</button>
-      
+
       <div *ngIf="gameCompleted" class="game-completed">
         <h2>Game Completed!</h2>
         <p>You completed the game in {{ moves }} moves.</p>
@@ -167,7 +165,7 @@ export class GameBoardComponent implements OnInit {
     if (!card.flipped && !card.matched && !this.gameCompleted && !this.isChecking && this.flippedCards.length < 2) {
       card.flipped = true;
       this.flippedCards.push(card);
-      
+
       if (this.flippedCards.length === 2) {
         this.isChecking = true;
         this.moves++;

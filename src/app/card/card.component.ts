@@ -1,22 +1,25 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {Component, Output, EventEmitter, input} from '@angular/core';
+import {AsyncPipe} from '@angular/common';
 import { ThemeService } from '../theme.service';
 import { Observable } from 'rxjs';
+import {Card} from "../game-board/game-board.component";
 
 @Component({
   selector: 'app-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    AsyncPipe
+  ],
   template: `
-    <div class="card" 
-         [class.flipped]="flipped" 
-         [class.matched]="matched" 
+    <div class="card"
+         [class.flipped]="card().flipped"
+         [class.matched]="card().matched"
          [class.dark-mode]="isDarkMode$ | async"
          (click)="onFlip()">
       <div class="card-inner">
         <div class="card-front">?</div>
         <div class="card-back">
-          <img [src]="imageUrl" alt="Cat" />
+          <img [src]="card().imageUrl" alt="Cat" />
         </div>
       </div>
     </div>
@@ -83,9 +86,7 @@ import { Observable } from 'rxjs';
   `]
 })
 export class CardComponent {
-  @Input() imageUrl: string = '';
-  @Input() flipped: boolean = false;
-  @Input() matched: boolean = false;
+  card = input.required<Card>();
   @Output() flip = new EventEmitter<void>();
 
   isDarkMode$: Observable<boolean>;
@@ -95,7 +96,7 @@ export class CardComponent {
   }
 
   onFlip() {
-    if (!this.flipped && !this.matched) {
+    if (!this.card().flipped && !this.card().matched) {
       this.flip.emit();
     }
   }
