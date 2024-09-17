@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { CardComponent } from '../card/card.component';
 import { ScoreboardComponent } from '../scoreboard/scoreboard.component';
 import { HighscoreService, Highscore } from '../highscore.service';
+import { ThemeService } from '../theme.service';
+import { Observable } from 'rxjs';
 
 interface Card {
   id: number;
@@ -17,7 +19,7 @@ interface Card {
   standalone: true,
   imports: [CommonModule, FormsModule, CardComponent, ScoreboardComponent],
   template: `
-    <div class="game-board">
+    <div class="game-board" [class.dark-mode]="isDarkMode$ | async">
       <app-scoreboard [moves]="moves"></app-scoreboard>
       <div class="cards">
         <app-card 
@@ -30,10 +32,10 @@ interface Card {
       </div>
       <button (click)="initializeGame()">New Game</button>
       
-      <div *ngIf="gameCompleted">
+      <div *ngIf="gameCompleted" class="game-completed">
         <h2>Game Completed!</h2>
         <p>You completed the game in {{ moves }} moves.</p>
-        <div *ngIf="isNewHighscore">
+        <div *ngIf="isNewHighscore" class="new-highscore">
           <p>New Highscore! Enter your name:</p>
           <input [(ngModel)]="playerName" placeholder="Your name">
           <button (click)="saveHighscore()">Save Score</button>
@@ -55,21 +57,68 @@ interface Card {
       display: flex;
       flex-direction: column;
       align-items: center;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .game-board.dark-mode {
+      background-color: #222;
+      color: #fff;
     }
     .cards {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
       margin-bottom: 20px;
+      width: 100%;
     }
     button {
-      padding: 10px 20px;
-      font-size: 16px;
+      width: 100%;
+      padding: 10px;
+      font-size: 18px;
       cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .game-completed, .highscores {
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .dark-mode .game-completed, .dark-mode .highscores {
+      background-color: #444;
+      color: #fff;
+    }
+    .new-highscore input {
+      width: calc(100% - 22px);
+      padding: 8px;
       margin-bottom: 10px;
     }
-    .highscores {
-      margin-top: 20px;
+    .new-highscore button {
+      width: 100%;
+      padding: 10px;
+      background-color: #008CBA;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .highscores ol {
+      padding-left: 20px;
+    }
+    .highscores li {
+      margin-bottom: 5px;
     }
   `]
 })
@@ -80,11 +129,17 @@ export class GameBoardComponent implements OnInit {
   isNewHighscore: boolean = false;
   playerName: string = '';
   highscores: Highscore[] = [];
+  isDarkMode$: Observable<boolean>;
   flippedCards: Card[] = [];
   isChecking: boolean = false;
 
-  constructor(private highscoreService: HighscoreService) {}
-  
+  constructor(
+    private highscoreService: HighscoreService,
+    private themeService: ThemeService
+  ) {
+    this.isDarkMode$ = this.themeService.darkMode$;
+  }
+
   ngOnInit() {
     this.initializeGame();
     this.loadHighscores();
@@ -138,7 +193,6 @@ export class GameBoardComponent implements OnInit {
       this.isChecking = false;
     }, 1000);
   }
-
   checkHighscore() {
     this.isNewHighscore = this.highscoreService.isHighscore(this.moves);
   }
